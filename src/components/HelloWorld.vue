@@ -1,7 +1,28 @@
 <template>
   <div class="hello">
-    <h1>{{ msg }}</h1>
-    {{ clients }}
+    <div class="container">
+      <header class="header">
+        <div class="logo-container">
+          <h1 class="logo-text">
+            Doge<span class="logo-highlight">ller</span>
+          </h1>
+        </div>
+      </header>
+      <div class="content-container">
+        <div class="active-users-panel" id="active-user-container">
+          <h3 class="panel-title">Active Users:</h3>
+        </div>
+        <div class="video-chat-container">
+          <h2 class="talk-info" id="talking-with-info">
+            Select active user on the left menu.
+          </h2>
+          <div class="video-container">
+            <video autoplay class="remote-video" id="remote-video"></video>
+            <video autoplay muted class="local-video" id="local-video"></video>
+          </div>
+        </div>
+      </div>
+    </div>
     <button @click="attendClient(clients[0])">Atender</button>
   </div>
 </template>
@@ -50,16 +71,63 @@ export default {
       }
       const offer = await this.peerConnection.createOffer();
       await this.peerConnection.setLocalDescription(new RTCSessionDescription(offer));
-      this.socket.emit('attend-client', {
+      this.socket.emit('operator-attend-client', {
         offer,
-        to: client,
+        clientId: client.id,
       });
+      this.getLocalVideo();
+    },
+    async answerClient(data) {
+      console.log(data);
+      this.getRemoteVideo();
+      await this.peerConnection.setRemoteDescription(
+        new RTCSessionDescription(data.answer),
+      );
+      this.socket.emit('operator-answer-client', {
+        answer: data.answer,
+        clientId: data.clientId,
+      });
+    },
+    async getLocalVideo() {
+      try {
+        console.log(navigator.mediaDevices.getUserMedia);
+        let stream = null;
+        if (navigator?.mediaDevices) {
+          stream = await navigator.mediaDevices.getUserMedia({ video: true });
+          const localVideo = document.getElementById('local-video');
+          if (localVideo) {
+            localVideo.srcObject = stream;
+          }
+          stream.getTracks().forEach((track) => {
+            console.log(track);
+            this.peerConnection.addTrack(track, stream);
+          });
+        }
+      } catch (e) {
+        console.log('Error => ', e);
+      }
+    },
+    async getRemoteVideo() {
+      try {
+        this.peerConnection.ontrack = ({ streams: [stream] }) => {
+          console.log('peerConnection new track');
+          const remoteVideo = document.getElementById('remote-video');
+          console.log(stream);
+          if (remoteVideo) {
+            console.log(remoteVideo);
+            remoteVideo.srcObject = stream;
+          }
+        };
+      } catch (e) {
+        console.log('Error => ', e);
+      }
     },
   },
   mounted() {
     this.socket.on('new-client', this.newClient);
     this.socket.on('remove-client', this.removeClient);
     this.socket.on('first-clients-fetch', this.setClients);
+    this.socket.on('client-answer-operator', this.answerClient);
   },
 };
 
