@@ -22,6 +22,12 @@ export default {
       }),
     };
   },
+  methods: {
+    joinVideoCallRoom(operatorId) {
+      console.log('Operador asignado!');
+      console.log(operatorId);
+    },
+  },
   mounted() {
     this.clientSocket.emit('client-request', {
       fullName: 'Sebastián Salazar',
@@ -29,6 +35,7 @@ export default {
       email: 'seba.salazar.vivanco@gmail.com',
       phoneNumber: '+56 962261873',
     });
+    this.clientSocket.on('operator-assigned', this.joinVideoCallRoom);
   },
 };
 

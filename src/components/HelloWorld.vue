@@ -10,6 +10,8 @@
 
 import SocketIO from 'socket.io-client';
 
+const { RTCPeerConnection, RTCSessionDescription } = window;
+
 export default {
   name: 'HelloWorld',
   props: {
@@ -23,6 +25,7 @@ export default {
         useConnectionNamespace: true,
       }),
       clients: [],
+      peerConnection: new RTCPeerConnection(),
     };
   },
   methods: {
@@ -34,17 +37,23 @@ export default {
     removeClient(clientId) {
       console.log('Se nos fue un cliente :/');
       console.log(clientId);
+      this.clients = this.clients.filter((client) => client.id !== clientId);
     },
     setClients(clients) {
       console.log('Setear clientes!');
       console.log(JSON.parse(clients));
       this.clients = JSON.parse(clients);
     },
-    attendClient(client) {
+    async attendClient(client) {
       if (!client) {
         return;
       }
-      this.socket.emit('attend-client', client);
+      const offer = await this.peerConnection.createOffer();
+      await this.peerConnection.setLocalDescription(new RTCSessionDescription(offer));
+      this.socket.emit('attend-client', {
+        offer,
+        to: client,
+      });
     },
   },
   mounted() {
