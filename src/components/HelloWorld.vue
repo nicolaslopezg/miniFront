@@ -46,7 +46,13 @@ export default {
         useConnectionNamespace: true,
       }),
       clients: [],
-      peerConnection: new RTCPeerConnection(),
+      peerConnection: new RTCPeerConnection({
+        configuration: {
+          offerToReceiveAudio: true,
+          offerToReceiveVideo: true,
+        },
+        iceServers: [],
+      }),
     };
   },
   methods: {
@@ -75,46 +81,40 @@ export default {
         offer,
         clientId: client.id,
       });
-      this.getLocalVideo();
     },
     async answerClient(data) {
       console.log(data);
-      this.getRemoteVideo();
+      await this.getLocalVideo();
       await this.peerConnection.setRemoteDescription(
         new RTCSessionDescription(data.answer),
       );
-      this.socket.emit('operator-answer-client', {
-        answer: data.answer,
-        clientId: data.clientId,
-      });
     },
-    async getLocalVideo() {
+    getLocalVideo() {
       try {
-        console.log(navigator.mediaDevices.getUserMedia);
-        let stream = null;
         if (navigator?.mediaDevices) {
-          stream = await navigator.mediaDevices.getUserMedia({ video: true });
-          const localVideo = document.getElementById('local-video');
-          if (localVideo) {
-            localVideo.srcObject = stream;
-          }
-          stream.getTracks().forEach((track) => {
-            console.log(track);
-            this.peerConnection.addTrack(track, stream);
+          navigator.mediaDevices.getUserMedia({ video: true }).then((stream) => {
+            const localVideo = document.getElementById('local-video');
+            if (localVideo) {
+              console.log(stream);
+              localVideo.srcObject = stream;
+            }
+            stream.getTracks().forEach((track) => {
+              console.log(track);
+              this.peerConnection.addTrack(track, stream);
+            });
           });
         }
       } catch (e) {
         console.log('Error => ', e);
       }
     },
-    async getRemoteVideo() {
+    getRemoteVideo() {
       try {
         this.peerConnection.ontrack = ({ streams: [stream] }) => {
           console.log('peerConnection new track');
           const remoteVideo = document.getElementById('remote-video');
-          console.log(stream);
           if (remoteVideo) {
-            console.log(remoteVideo);
+            console.log(stream);
             remoteVideo.srcObject = stream;
           }
         };
@@ -128,6 +128,8 @@ export default {
     this.socket.on('remove-client', this.removeClient);
     this.socket.on('first-clients-fetch', this.setClients);
     this.socket.on('client-answer-operator', this.answerClient);
+    this.getLocalVideo();
+    this.getRemoteVideo();
   },
 };
 

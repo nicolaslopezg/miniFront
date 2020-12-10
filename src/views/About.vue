@@ -17,7 +17,7 @@
             Select active user on the left menu.
           </h2>
           <div class="video-container">
-            <video autoplay class="remote-video" id="remote-video"></video>
+            <video v-if="renderRemoteVideo" autoplay class="remote-video" id="remote-video"></video>
             <video autoplay muted class="local-video" id="local-video"></video>
           </div>
         </div>
@@ -44,7 +44,14 @@ export default {
         transports: ['websocket'],
         useConnectionNamespace: true,
       }),
-      peerConnection: new RTCPeerConnection(),
+      peerConnection: new RTCPeerConnection({
+        configuration: {
+          offerToReceiveAudio: true,
+          offerToReceiveVideo: true,
+        },
+        iceServers: [],
+      }),
+      renderRemoteVideo: false,
     };
   },
   methods: {
@@ -61,45 +68,43 @@ export default {
         answer,
         operatorId: data.operatorId,
       });
-      this.getRemoteVideo();
     },
     async answerOperator(data) {
       try {
+        console.log('[Answer operator]');
         console.log(data);
-        await this.peerConnection.setRemoteDescription(
-          new RTCSessionDescription(data.answer),
-        );
       } catch (e) {
         console.log('Error => ', e);
       }
     },
-    async getLocalVideo() {
+    getLocalVideo() {
       try {
-        console.log(navigator.mediaDevices.getUserMedia);
-        let stream = null;
         if (navigator?.mediaDevices) {
-          stream = await navigator.mediaDevices.getUserMedia({ video: true });
-          const localVideo = document.getElementById('local-video');
-          if (localVideo) {
-            localVideo.srcObject = stream;
-          }
-          stream.getTracks().forEach((track) => {
-            console.log(track);
-            this.peerConnection.addTrack(track, stream);
+          navigator.mediaDevices.getUserMedia({ video: true }).then((stream) => {
+            const localVideo = document.getElementById('local-video');
+            if (localVideo) {
+              console.log(stream);
+              localVideo.srcObject = stream;
+            }
+            stream.getTracks().forEach((track) => {
+              console.log(track);
+              this.peerConnection.addTrack(track, stream);
+            });
           });
         }
       } catch (e) {
         console.log('Error => ', e);
       }
     },
-    async getRemoteVideo() {
+    getRemoteVideo() {
       try {
         this.peerConnection.ontrack = ({ streams: [stream] }) => {
           console.log('peerConnection new track');
           const remoteVideo = document.getElementById('remote-video');
-          console.log(stream);
-          if (remoteVideo && window.URL) {
-            remoteVideo.srcObject = window.URL.createObjectURL(stream);
+          if (remoteVideo) {
+            this.renderRemoteVideo = true;
+            console.log(stream);
+            remoteVideo.srcObject = stream;
           }
         };
       } catch (e) {
@@ -117,6 +122,7 @@ export default {
     this.clientSocket.on('operator-attend-client', this.joinVideoCallRoom);
     this.clientSocket.on('operator-answer-client', this.answerOperator);
     this.getLocalVideo();
+    this.getRemoteVideo();
   },
 };
 
