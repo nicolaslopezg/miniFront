@@ -89,6 +89,8 @@ export default {
         return;
       }
       console.log(client);
+      this.$router.push('/vista-panel');
+      this.socket.emit('redirect-client');
       this.socket.emit('operator-endCall', client);
     },
     async answerClient(data) {
@@ -99,7 +101,7 @@ export default {
       );
     },
     async redirectOperator() {
-      this.$router.push('/greetings');
+      this.$router.push('/vista-panel');
     },
     getLocalVideo() {
       try {

@@ -79,8 +79,12 @@ export default {
       }
     },
     async endOperator() {
+      this.$router.push('/greetings');
       this.clientSocket.emit('redirect-operator');
       this.clientSocket.emit('disconnect-client');
+    },
+    async redirectClient() {
+      this.$router.push('/greetings');
     },
     getLocalVideo() {
       try {
@@ -128,6 +132,7 @@ export default {
     this.clientSocket.on('operator-attend-client', this.joinVideoCallRoom);
     this.clientSocket.on('operator-answer-client', this.answerOperator);
     this.clientSocket.on('disconnect');
+    this.clientSocket.on('redirect-client', this.redirectClient);
     this.getLocalVideo();
     this.getRemoteVideo();
   },
