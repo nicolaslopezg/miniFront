@@ -23,6 +23,7 @@
         </div>
       </div>
     </div>
+    <button @click="endOperator()">Cortar</button>
   </div>
 </template>
 
@@ -40,7 +41,7 @@ export default {
   data() {
     return {
       // clientSocket: SocketIO('http://67.205.168.127:3001/clients/clientsQueue', {
-      clientSocket: SocketIO('http://localhost:3001/clients/clientsQueue', {
+      clientSocket: SocketIO('http://localhost:3000/clients/clientsQueue', {
         transports: ['websocket'],
         useConnectionNamespace: true,
       }),
@@ -76,6 +77,10 @@ export default {
       } catch (e) {
         console.log('Error => ', e);
       }
+    },
+    async endOperator() {
+      this.clientSocket.emit('redirect-operator');
+      this.clientSocket.emit('disconnect-client');
     },
     getLocalVideo() {
       try {
@@ -118,9 +123,11 @@ export default {
       dni: '22.805.902-1',
       email: 'seba.salazar.vivanco@gmail.com',
       phoneNumber: '+56 962261873',
+      status: 'waiting',
     });
     this.clientSocket.on('operator-attend-client', this.joinVideoCallRoom);
     this.clientSocket.on('operator-answer-client', this.answerOperator);
+    this.clientSocket.on('disconnect');
     this.getLocalVideo();
     this.getRemoteVideo();
   },
