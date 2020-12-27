@@ -10,7 +10,7 @@
       </header>
       <div class="content-container">
         <div class="active-users-panel" id="active-user-container">
-          <h3 class="panel-title">Active Users: {{ clients }}</h3>
+          <h3 class="panel-title">Activee Users: {{ clients }}</h3>
         </div>
         <div class="video-chat-container">
           <h2 class="talk-info" id="talking-with-info">
